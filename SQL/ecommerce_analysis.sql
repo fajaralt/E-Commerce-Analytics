@@ -77,6 +77,93 @@ IGNORE 1 LINES;
 SET GLOBAL local_infile = 0;
 SHOW VARIABLES LIKE 'local_infile';
 
+-- Cleaning Data and Checking the Datas -- 
+
+-- 1. Create Staging Table
+-- 2. Remove Duplicates
+-- 3. Standardizing Data
+-- 4. Handling Null / Blank Values
+-- 5. Fix Data Type
+-- 6. Delete Uneccesary Column
+
+-- Checking Duplicates 
+
+WITH duplicate_cte AS (
+	SELECT *,
+		ROW_NUMBER() OVER(
+		PARTITION BY product_id, product_name, category, sub_category,
+            unit_cost, selling_price, shipping_cost_per_unit, weight_lbs,
+            supplier) AS row_num
+    FROM products
+)
+SELECT * 
+FROM duplicate_cte
+WHERE row_num > 1;
+
+## No duplcate Data in products table
+
+WITH duplicate_cte AS (
+	SELECT *,
+		ROW_NUMBER() OVER(
+		PARTITION BY order_id, customer_id, order_date, `channel`, 
+        payment_method, region, items_ordered, primary_category, gross_revenue,
+        discount_pct, discount_amount, shipping_cost, product_cost,
+        platform_fee, transaction_fee, returned, refund_amount, net_revenue,
+        total_costs, profit) AS row_num
+    FROM orders
+)
+SELECT * 
+FROM duplicate_cte
+WHERE row_num > 1;
+
+## No duplicate Data in orders table
+
+WITH duplicate_cte AS (
+	SELECT *,
+		ROW_NUMBER() OVER(
+		PARTITION BY `month`, platform, spend, impressions, clicks,
+        conversions, revenue_attributed, cpc, cpa, roas) AS row_num
+    FROM marketing_spend
+)
+SELECT * 
+FROM duplicate_cte
+WHERE row_num > 1;
+
+## No duplicate Data in marketing_spend table
+
+-- Checking Data Type
+
+DESCRIBE products;
+DESCRIBE orders;
+DESCRIBE marketing_spend;
+
+-- Lock all the datasets
+
+ALTER TABLE products
+MODIFY COLUMN category VARCHAR(100) NOT NULL,
+MODIFY COLUMN sub_category VARCHAR(100) NOT NULL,
+MODIFY COLUMN shipping_cost_per_unit DECIMAL(10, 2) NOT NULL,
+MODIFY COLUMN weight_lbs DECIMAL(10, 2) NOT NULL,
+MODIFY COLUMN supplier VARCHAR(100) NOT NULL;
+
+ALTER TABLE orders
+MODIFY COLUMN `channel` VARCHAR(50) NOT NULL,
+MODIFY COLUMN payment_method VARCHAR(50) NOT NULL,
+MODIFY COLUMN region VARCHAR(50) NOT NULL,
+MODIFY COLUMN primary_category VARCHAR(100) NOT NULL,
+MODIFY COLUMN discount_pct DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+MODIFY COLUMN discount_amount DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+MODIFY COLUMN shipping_cost DECIMAL(10, 2) NOT NULL,
+MODIFY COLUMN platform_fee DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+MODIFY COLUMN transaction_fee DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+MODIFY COLUMN returned VARCHAR(5) NOT NULL DEFAULT 'No',
+MODIFY COLUMN refund_amount DECIMAl(10, 2) NOT NULL DEFAULT 0.00;
+
+ALTER TABLE marketing_spend
+MODIFY COLUMN cpc DECIMAL(5, 2) NOT NULL,
+MODIFY COLUMN cpa DECIMAL(5, 2) NOT NULL,
+MODIFY COLUMN roas DECIMAL(5, 2) NOT NULL;
+
 -- All the Datasets already cleaned and ready to analyze
 
 # Question to answer and breakdown what types of analytics 
@@ -333,16 +420,7 @@ ORDER BY monthly_roas ASC;
 ## To reduce the marketing budget by 20%, the company should prioritize reducing spending on Email Marketing in December 2025, --
 -- October 2025, July 2025, and June 2024, followed by selected Facebook Ads campaigns with relatively low monthly ROAS.
 
-SELECT *
-FROM products;
 
-SELECT *
-FROM orders;
-
-SELECT count(*)
-FROM marketing_spend;
-
-DESCRIBE orders;
 
 
 

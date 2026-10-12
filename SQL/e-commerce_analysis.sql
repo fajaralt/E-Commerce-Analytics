@@ -342,5 +342,7 @@ FROM orders;
 SELECT count(*)
 FROM marketing_spend;
 
+DESCRIBE orders;
+
 
 
